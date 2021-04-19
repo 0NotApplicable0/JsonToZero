@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows.Forms;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace JsonToZero
 {
@@ -12,7 +13,7 @@ namespace JsonToZero
         static void Main(string[] args)
         {
             Console.WriteLine("Starting App!");
-            
+
             var fileDialog = new OpenFileDialog
             {
                 Multiselect = true,
@@ -28,16 +29,17 @@ namespace JsonToZero
                         var serializer = new JsonSerializer();
 
                         using (var sr = new StreamReader(file))
-                        using (var jsonTextReader = new JsonTextReader(sr))
                         {
-                            var json = serializer.Deserialize<Root>(jsonTextReader);
-                            sr.Close();
-                            json.cooldown = 0;
+                            var parsedJson = JObject.Parse(sr.ReadToEnd());
+                            if (parsedJson.ContainsKey("cooldown"))
+                            {
+                                var cooldown = parsedJson["cooldown"];
+                                cooldown.Replace(0);
+                                sr.Close();
 
-                            var jsonData = JsonConvert.SerializeObject(json);  
-                            // var path = System.Reflection.Assembly.GetExecutingAssembly().Location;
-                            // var fileName = Path.Combine(path, "test.txt");
-                            File.WriteAllText(file, jsonData);
+                                var jsonText = JsonConvert.SerializeObject(parsedJson, Formatting.Indented);
+                                File.WriteAllText(file, jsonText);
+                            }
                         }
                     }
                 }
